@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>PANEL JURAGAN PULSA (ONLINE)</title>
+    <style>
+        body { font-family: sans-serif; background: #1e272e; color: #ecf0f1; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: #2f3640; padding: 20px; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #353b48; }
+        th, td { padding: 12px; border-bottom: 1px solid #57606f; text-align: left; }
+        th { background: #2f3542; color: #f1c40f; }
+        .btn { cursor: pointer; padding: 5px 10px; border: none; border-radius: 4px; font-weight: bold; }
+        .btn-green { background: #2ecc71; color: white; }
+        .btn-red { background: #e74c3c; color: white; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .card { background: #353b48; padding: 20px; border-left: 5px solid #3498db; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 style="color:#f1c40f;">📡 JURAGAN PULSA REALTIME</h2>
+    
+    <div class="grid">
+        <div class="card">
+            <small>Total Saldo Mitra</small>
+            <h1 id="total-saldo">Loading...</h1>
+        </div>
+        <div class="card">
+            <small>Total Transaksi</small>
+            <h1 id="total-trx">Loading...</h1>
+        </div>
+        <div class="card">
+            <small>Omzet Server</small>
+            <h1 id="total-omzet">Loading...</h1>
+        </div>
+    </div>
+
+    <h3>🎛️ Kontrol Produk</h3>
+    <table>
+        <thead><tr><th>Kode</th><th>Nama</th><th>Status</th><th>Aksi</th></tr></thead>
+        <tbody id="tbl-produk"></tbody>
+    </table>
+
+    <h3 style="margin-top:40px;">👥 Manajemen Saldo Agen</h3>
+    <table>
+        <thead><tr><th>ID</th><th>Nama</th><th>Sisa Saldo</th><th>Isi Saldo</th></tr></thead>
+        <tbody id="tbl-agen"></tbody>
+    </table>
+
+    <h3 style="margin-top:40px;">📜 Live Transaksi</h3>
+    <div style="height:300px; overflow-y:auto; border:1px solid #57606f;">
+        <table><tbody id="tbl-trx"></tbody></table>
+    </div>
+</div>
+
+<script type="module">
+    import { initDB, listenData, depositSaldo, toggleProductStatus, formatRupiah } from './logic_pulsa.js';
+
+    initDB(); // Buat data default kalau kosong
+
+    // 1. DENGAR DATA AGEN
+    listenData('agents', (data) => {
+        if(!data) return;
+        let html = '';
+        let totalSaldo = 0;
+        
+        Object.values(data).forEach(a => {
+            totalSaldo += a.saldo;
+            html += `<tr>
+                <td>${a.id}</td>
+                <td>${a.name}</td>
+                <td style="color:#2ecc71; font-weight:bold;">${formatRupiah(a.saldo)}</td>
+                <td><button class="btn btn-green" onclick="window.isiSaldo('${a.id}', ${a.saldo})">+ ISI SALDO</button></td>
+            </tr>`;
+        });
+        document.getElementById('tbl-agen').innerHTML = html;
+        document.getElementById('total-saldo').innerText = formatRupiah(totalSaldo);
+    });
+
+    // 2. DENGAR DATA TRANSAKSI
+    listenData('transactions', (data) => {
+        let trxs = data ? Object.values(data) : [];
+        document.getElementById('total-trx').innerText = trxs.length;
+        
+        let omzet = trxs.reduce((a, b) => a + b.modal, 0);
+        document.getElementById('total-omzet').innerText = formatRupiah(omzet);
+
+        let html = '';
+        trxs.reverse().forEach(t => {
+            html += `<tr>
+                <td><small>${t.time}</small></td>
+                <td>${t.agent_id}</td>
+                <td>${t.product}</td>
+                <td>${t.target}</td>
+                <td><span style="background:#2ecc71; color:black; padding:2px 5px; border-radius:4px;">SUKSES</span></td>
+            </tr>`;
+        });
+        document.getElementById('tbl-trx').innerHTML = html;
+    });
+
+    // 3. DENGAR DATA PRODUK
+    listenData('products', (data) => {
+        if(!data) return;
+        let html = '';
+        data.forEach(p => {
+            let btnClass = p.status === 'LANCAR' ? 'btn-red' : 'btn-green';
+            let btnText = p.status === 'LANCAR' ? 'MATIKAN' : 'HIDUPKAN';
+            html += `<tr>
+                <td><b>${p.code}</b></td>
+                <td>${p.name}</td>
+                <td style="color:${p.status === 'LANCAR' ? '#2ecc71' : 'red'}">${p.status}</td>
+                <td><button class="btn ${btnClass}" onclick="window.ubahStatus('${p.code}')">${btnText}</button></td>
+            </tr>`;
+        });
+        document.getElementById('tbl-produk').innerHTML = html;
+    });
+
+    // GLOBAL FUNCTIONS (Agar bisa diklik dari HTML)
+    window.isiSaldo = (id, currentSaldo) => {
+        let amt = prompt(`Deposit untuk ${id}:`, 50000);
+        if(amt && amt > 0) depositSaldo(id, currentSaldo, amt);
+    }
+    window.ubahStatus = (code) => toggleProductStatus(code);
+</script>
+</body>
+</html>
