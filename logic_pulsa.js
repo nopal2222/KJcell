@@ -133,3 +133,21 @@ export async function toggleProductStatus(code) {
         update(ref(db, `products/${idx}`), { status: newStatus });
     }
 }
+
+// 6. TAMBAH AGEN BARU (FITUR BARU)
+export async function tambahAgenBaru(id, nama, pin) {
+    const dbRef = ref(db);
+    const snapshot = await get(child(dbRef, `agents/${id}`));
+    
+    if (snapshot.exists()) {
+        throw "ID AGEN SUDAH ADA! Ganti ID lain.";
+    }
+
+    await set(ref(db, `agents/${id}`), {
+        id: id,
+        name: nama,
+        pin: pin,
+        saldo: 0,
+        profit: 0
+    });
+}
