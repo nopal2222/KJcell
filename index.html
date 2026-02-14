@@ -12,8 +12,13 @@
         .btn { cursor: pointer; padding: 5px 10px; border: none; border-radius: 4px; font-weight: bold; }
         .btn-green { background: #2ecc71; color: white; }
         .btn-red { background: #e74c3c; color: white; }
+        .btn-blue { background: #3498db; color: white; padding: 10px 20px; }
         .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .card { background: #353b48; padding: 20px; border-left: 5px solid #3498db; }
+        
+        /* Form Tambah Agen */
+        .form-box { background: #353b48; padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #57606f; }
+        .input-dark { background: #1e272e; border: 1px solid #57606f; color: white; padding: 8px; border-radius: 4px; margin-right: 10px; }
     </style>
 </head>
 <body>
@@ -36,16 +41,24 @@
         </div>
     </div>
 
-    <h3>🎛️ Kontrol Produk</h3>
+    <h3 style="margin-top: 40px;">➕ Registrasi Agen Baru</h3>
+    <div class="form-box">
+        <input type="text" id="new-id" class="input-dark" placeholder="ID Agen (ex: AGEN002)">
+        <input type="text" id="new-name" class="input-dark" placeholder="Nama Agen">
+        <input type="text" id="new-pin" class="input-dark" placeholder="PIN (ex: 1234)" style="width: 80px;">
+        <button class="btn btn-blue" onclick="window.aksiTambah()">DAFTARKAN</button>
+    </div>
+
+    <h3>👥 Manajemen Saldo Agen</h3>
+    <table>
+        <thead><tr><th>ID</th><th>Nama</th><th>PIN</th><th>Sisa Saldo</th><th>Isi Saldo</th></tr></thead>
+        <tbody id="tbl-agen"></tbody>
+    </table>
+
+    <h3 style="margin-top:40px;">🎛️ Kontrol Produk</h3>
     <table>
         <thead><tr><th>Kode</th><th>Nama</th><th>Status</th><th>Aksi</th></tr></thead>
         <tbody id="tbl-produk"></tbody>
-    </table>
-
-    <h3 style="margin-top:40px;">👥 Manajemen Saldo Agen</h3>
-    <table>
-        <thead><tr><th>ID</th><th>Nama</th><th>Sisa Saldo</th><th>Isi Saldo</th></tr></thead>
-        <tbody id="tbl-agen"></tbody>
     </table>
 
     <h3 style="margin-top:40px;">📜 Live Transaksi</h3>
@@ -55,9 +68,9 @@
 </div>
 
 <script type="module">
-    import { initDB, listenData, depositSaldo, toggleProductStatus, formatRupiah } from './logic_pulsa.js';
+    import { initDB, listenData, depositSaldo, toggleProductStatus, tambahAgenBaru, formatRupiah } from './logic_pulsa.js';
 
-    initDB(); // Buat data default kalau kosong
+    initDB(); 
 
     // 1. DENGAR DATA AGEN
     listenData('agents', (data) => {
@@ -70,6 +83,7 @@
             html += `<tr>
                 <td>${a.id}</td>
                 <td>${a.name}</td>
+                <td><small style="color:#aaa;">${a.pin}</small></td>
                 <td style="color:#2ecc71; font-weight:bold;">${formatRupiah(a.saldo)}</td>
                 <td><button class="btn btn-green" onclick="window.isiSaldo('${a.id}', ${a.saldo})">+ ISI SALDO</button></td>
             </tr>`;
@@ -116,12 +130,32 @@
         document.getElementById('tbl-produk').innerHTML = html;
     });
 
-    // GLOBAL FUNCTIONS (Agar bisa diklik dari HTML)
+    // --- GLOBAL FUNCTIONS ---
     window.isiSaldo = (id, currentSaldo) => {
         let amt = prompt(`Deposit untuk ${id}:`, 50000);
         if(amt && amt > 0) depositSaldo(id, currentSaldo, amt);
     }
+    
     window.ubahStatus = (code) => toggleProductStatus(code);
+
+    window.aksiTambah = async () => {
+        let id = document.getElementById('new-id').value;
+        let nama = document.getElementById('new-name').value;
+        let pin = document.getElementById('new-pin').value;
+
+        if(!id || !nama || !pin) return alert("Mohon lengkapi ID, Nama, dan PIN!");
+
+        try {
+            await tambahAgenBaru(id, nama, pin);
+            alert("✅ Agen Berhasil Didaftarkan!");
+            // Kosongkan Form
+            document.getElementById('new-id').value = '';
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-pin').value = '';
+        } catch(e) {
+            alert("❌ Gagal: " + e);
+        }
+    }
 </script>
 </body>
 </html>
