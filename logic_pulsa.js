@@ -167,3 +167,4 @@ export function generateStrukImage(elementId) {
         }).catch(err => reject(err));
     });
 }
+
