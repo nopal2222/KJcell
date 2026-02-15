@@ -1,10 +1,7 @@
-// ==========================================
-// KONEKSI KE FIREBASE (DATABASE ONLINE)
-// ==========================================
+
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getDatabase, ref, get, set, update, onValue, push, child } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-// 🔴🔴🔴 GANTI BAGIAN INI DENGAN CONFIG DARI CONSOLE FIREBASE KAMU 🔴🔴🔴
 const firebaseConfig = {
   apiKey: "AIzaSyDezxMn0AcFms3iMWs-9VkCVGEn-5TcMxY",
   authDomain: "juraganpulsa.firebaseapp.com",
@@ -14,22 +11,17 @@ const firebaseConfig = {
   messagingSenderId: "321197341289",
   appId: "1:321197341289:web:974588ab7555b55fc4c0f8"
 };
-// 🔴🔴🔴 SAMPAI SINI 🔴🔴🔴
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-
-// ==========================================
-// CORE LOGIC (ONLINE)
-// ==========================================
 
 export function formatRupiah(num) {
     return "Rp " + num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 }
 
-// 1. DENGAR DATA (REALTIME LISTENER)
+
 export function listenData(path, callback) {
-    const dataRef = ref(db, path);
+    const dataRef = ref(db, path);1
     onValue(dataRef, (snapshot) => {
         const data = snapshot.val();
         callback(data);
@@ -149,5 +141,29 @@ export async function tambahAgenBaru(id, nama, pin) {
         pin: pin,
         saldo: 0,
         profit: 0
+    });
+}
+// ... (Kode sebelumnya tetap sama) ...
+
+// 7. FITUR SHARE STRUK (GENERATE GAMBAR)
+// Butuh library html2canvas di file HTML nanti
+export function generateStrukImage(elementId) {
+    return new Promise((resolve, reject) => {
+        const node = document.getElementById(elementId);
+        
+        // Panggil library global html2canvas
+        if (typeof window.html2canvas === 'undefined') {
+            reject("Library html2canvas belum dipasang!");
+            return;
+        }
+
+        window.html2canvas(node, {
+            scale: 2, // Biar tajam
+            backgroundColor: "#ffffff"
+        }).then(canvas => {
+            // Convert ke format gambar
+            const imgData = canvas.toDataURL("image/jpeg", 0.9);
+            resolve(imgData);
+        }).catch(err => reject(err));
     });
 }
